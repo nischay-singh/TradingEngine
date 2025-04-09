@@ -1,0 +1,1 @@
+/usr/bin/c++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/TradingEngineTests.dir/src/OrderBook.cpp.o CMakeFiles/TradingEngineTests.dir/src/OrderManager.cpp.o CMakeFiles/TradingEngineTests.dir/src/Trader.cpp.o CMakeFiles/TradingEngineTests.dir/src/main.cpp.o -o TradingEngineTests
