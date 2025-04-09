@@ -1,1 +1,0 @@
-/usr/bin/c++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/TradingSimulation.dir/src/OrderBook.cpp.o CMakeFiles/TradingSimulation.dir/src/main.cpp.o -o TradingSimulation

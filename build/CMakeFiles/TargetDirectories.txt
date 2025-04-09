@@ -1,4 +1,0 @@
-/Users/NischaySingh/Desktop/Programming/c++/Trading Engine/build/CMakeFiles/TradingEngine.dir
-/Users/NischaySingh/Desktop/Programming/c++/Trading Engine/build/CMakeFiles/TradingEngineTests.dir
-/Users/NischaySingh/Desktop/Programming/c++/Trading Engine/build/CMakeFiles/edit_cache.dir
-/Users/NischaySingh/Desktop/Programming/c++/Trading Engine/build/CMakeFiles/rebuild_cache.dir
