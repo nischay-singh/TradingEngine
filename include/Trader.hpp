@@ -1,17 +1,24 @@
 #ifndef TRADER_HPP
 #define TRADER_HPP
 
+#include "OrderBook.hpp"
 #include <string>
 #include <vector>
 #include <map>
 #include <memory>
+#include <deque>
 
 struct Trade
 {
     std::string side;
     double price;
+    int quantity; // positive for long, negative for short
+};
+
+struct OpenPosition
+{
     int quantity;
-    double timestamp;
+    double price;
 };
 
 class Trader
@@ -23,13 +30,13 @@ public:
 
     bool placeBuyLimitOrder(double price, int quantity);
     bool placeSellLimitOrder(double price, int quantity);
-    bool placeBuyMarketOrder(int quantity);
-    bool placeSellMarketOrder(int quantity);
+    bool placeBuyMarketOrder(double quantity);
+    bool placeSellMarketOrder(double quantity);
 
     void updatePosition(const Trade &trade);
-    double getCurrentPosition() const;
+    double getCurrentPosition() const { return currentPosition; }
     double getUnrealizedPnL(double currentPrice) const;
-    double getRealizedPnL() const;
+    double getRealizedPnL() const { return realizedPnL; }
     double getTotalPnL(double currentPrice) const;
 
     double getAvailableCapital() const;
@@ -40,12 +47,12 @@ public:
 private:
     std::string name;
     double capital;
-    int position;
+    double currentPosition;
     double realizedPnL;
     std::vector<Trade> tradeHistory;
+    std::deque<OpenPosition> openPositions;
 
     bool validateOrder(double price, int quantity) const;
-    std::string generateOrderId() const;
 };
 
 #endif // TRADER_HPP

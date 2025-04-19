@@ -13,8 +13,6 @@ struct Order
     int quantity;
 };
 
-std::string generateOrderId();
-
 class OrderBook
 {
 public:

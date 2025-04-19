@@ -4,155 +4,228 @@
 #include <algorithm>
 #include <sstream>
 #include <random>
+#include <iostream>
 
-Trader::Trader(const std::string& name, double initialCapital)
-    : name(name), capital(initialCapital), position(0), realizedPnL(0.0) {}
+Trader::Trader(const std::string &name, double initialCapital)
+    : name(name), capital(initialCapital), currentPosition(0.0), realizedPnL(0.0) {}
 
-bool Trader::placeBuyLimitOrder(double price, int quantity) {
-    if (!validateOrder(price, quantity)) {
+bool Trader::placeBuyLimitOrder(double price, int quantity)
+{
+    if (!validateOrder(price, quantity))
+    {
         return false;
     }
-    
+
     Order order;
     order.type = "buy_limit";
     order.price = price;
     order.quantity = quantity;
     order.orderId = generateOrderId();
-    
-    return OrderManager::getInstance().submitOrder(name, order);
+
+    auto execution = OrderManager::getInstance().submitOrder(name, order);
+    if (execution && execution->isExecuted)
+    {
+        Trade trade;
+        trade.side = "buy";
+        trade.price = execution->avgPrice;
+        trade.quantity = execution->filledQuantity;
+        tradeHistory.push_back(trade);
+
+        updatePosition(trade);
+        return true;
+    }
+    return false;
 }
 
-bool Trader::placeSellLimitOrder(double price, int quantity) {
-    if (!validateOrder(price, quantity)) {
+bool Trader::placeSellLimitOrder(double price, int quantity)
+{
+    if (!validateOrder(price, quantity))
+    {
         return false;
     }
-    
+
     Order order;
     order.type = "sell_limit";
     order.price = price;
     order.quantity = quantity;
     order.orderId = generateOrderId();
-    
-    return OrderManager::getInstance().submitOrder(name, order);
+
+    auto execution = OrderManager::getInstance().submitOrder(name, order);
+    if (execution && execution->isExecuted)
+    {
+        Trade trade;
+        trade.side = "sell";
+        trade.price = execution->avgPrice;
+        trade.quantity = execution->filledQuantity;
+        tradeHistory.push_back(trade);
+
+        updatePosition(trade);
+        return true;
+    }
+    return false;
 }
 
-bool Trader::placeBuyMarketOrder(int quantity) {
-    if (quantity <= 0) {
-        return false;
-    }
-    
+bool Trader::placeBuyMarketOrder(double quantity)
+{
     Order order;
+    order.orderId = generateOrderId();
     order.type = "buy_market";
     order.quantity = quantity;
     order.price = 0.0;
-    order.orderId = generateOrderId();
-    
-    return OrderManager::getInstance().submitOrder(name, order);
+
+    auto execution = OrderManager::getInstance().submitOrder(name, order);
+    if (execution && execution->isExecuted)
+    {
+        Trade trade;
+        trade.side = "buy";
+        trade.price = execution->avgPrice;
+        trade.quantity = execution->filledQuantity;
+        tradeHistory.push_back(trade);
+
+        updatePosition(trade);
+        return true;
+    }
+    return false;
 }
 
-bool Trader::placeSellMarketOrder(int quantity) {
-    if (quantity <= 0) {
-        return false;
-    }
-    
+bool Trader::placeSellMarketOrder(double quantity)
+{
     Order order;
+    order.orderId = generateOrderId();
     order.type = "sell_market";
     order.quantity = quantity;
     order.price = 0.0;
-    order.orderId = generateOrderId();
-    
-    return OrderManager::getInstance().submitOrder(name, order);
+
+    auto execution = OrderManager::getInstance().submitOrder(name, order);
+    if (execution && execution->isExecuted)
+    {
+        Trade trade;
+        trade.side = "sell";
+        trade.price = execution->avgPrice;
+        trade.quantity = execution->filledQuantity;
+        tradeHistory.push_back(trade);
+
+        updatePosition(trade);
+        return true;
+    }
+    return false;
 }
 
-void Trader::updatePosition(const Trade& trade) {
-    if (trade.side == "buy") {
-        position += trade.quantity;
-        capital -= trade.price * trade.quantity;
-    } else {
-        position -= trade.quantity;
-        capital += trade.price * trade.quantity;
-    }
-    
-    if (trade.side == "sell") {
-        int remainingQuantity = trade.quantity;
-        auto it = tradeHistory.begin();
-        while (remainingQuantity > 0 && it != tradeHistory.end()) {
-            if (it->side == "buy") {
-                int matchedQuantity = std::min(remainingQuantity, it->quantity);
-                realizedPnL += matchedQuantity * (trade.price - it->price);
-                remainingQuantity -= matchedQuantity;
+void Trader::updatePosition(const Trade &trade)
+{
+    if (trade.side == "buy")
+    {
+        if (currentPosition < 0)
+        {
+            int coverQuantity = trade.quantity;
+            while (coverQuantity > 0 && !openPositions.empty() && openPositions.front().quantity < 0)
+            {
+                int shortQty = -openPositions.front().quantity;
+                int matched = std::min(coverQuantity, shortQty);
+
+                realizedPnL += matched * (openPositions.front().price - trade.price);
+                openPositions.front().quantity += matched;
+                coverQuantity -= matched;
+                if (openPositions.front().quantity == 0)
+                {
+                    openPositions.pop_front();
+                }
             }
-            ++it;
+            if (coverQuantity > 0)
+            {
+                openPositions.push_back(OpenPosition{coverQuantity, trade.price});
+            }
+            currentPosition += trade.quantity;
+            capital -= trade.price * trade.quantity;
+        }
+        else
+        {
+            openPositions.push_back(OpenPosition{trade.quantity, trade.price});
+            currentPosition += trade.quantity;
+            capital -= trade.price * trade.quantity;
         }
     }
-    
+    else if (trade.side == "sell")
+    {
+        if (currentPosition > 0)
+        {
+            int sellQuantity = trade.quantity;
+            while (sellQuantity > 0 && !openPositions.empty() && openPositions.front().quantity > 0)
+            {
+                int matched = std::min(sellQuantity, openPositions.front().quantity);
+                realizedPnL += matched * (trade.price - openPositions.front().price);
+                openPositions.front().quantity -= matched;
+                sellQuantity -= matched;
+                if (openPositions.front().quantity == 0)
+                {
+                    openPositions.pop_front();
+                }
+            }
+            if (sellQuantity > 0)
+            {
+                openPositions.push_back(OpenPosition{-sellQuantity, trade.price});
+            }
+            currentPosition -= trade.quantity;
+            capital += trade.price * trade.quantity;
+        }
+        else
+        {
+            openPositions.push_back(OpenPosition{-trade.quantity, trade.price});
+            currentPosition -= trade.quantity;
+            capital += trade.price * trade.quantity;
+        }
+    }
     tradeHistory.push_back(trade);
 }
 
-double Trader::getCurrentPosition() const {
-    return position;
-}
-
-double Trader::getUnrealizedPnL(double currentPrice) const {
-    if (position == 0) return 0.0;
-    
-    double avgEntryPrice = 0.0;
-    int totalQuantity = 0;
-    
-    for (const auto& trade : tradeHistory) {
-        if (trade.side == "buy") {
-            avgEntryPrice += trade.price * trade.quantity;
-            totalQuantity += trade.quantity;
+double Trader::getUnrealizedPnL(double currentPrice) const
+{
+    double pnl = 0.0;
+    for (const auto &pos : openPositions)
+    {
+        if (pos.quantity > 0)
+        {
+            pnl += pos.quantity * (currentPrice - pos.price);
+        }
+        else if (pos.quantity < 0)
+        {
+            pnl += (-pos.quantity) * (pos.price - currentPrice);
         }
     }
-    
-    if (totalQuantity == 0) return 0.0;
-    avgEntryPrice /= totalQuantity;
-    
-    return position * (currentPrice - avgEntryPrice);
+    return pnl;
 }
 
-double Trader::getRealizedPnL() const {
-    return realizedPnL;
-}
-
-double Trader::getTotalPnL(double currentPrice) const {
+double Trader::getTotalPnL(double currentPrice) const
+{
     return getRealizedPnL() + getUnrealizedPnL(currentPrice);
 }
 
-double Trader::getAvailableCapital() const {
+double Trader::getAvailableCapital() const
+{
     return capital;
 }
 
-void Trader::updateCapital(double amount) {
+void Trader::updateCapital(double amount)
+{
     capital += amount;
 }
 
-const std::vector<Trade>& Trader::getTradeHistory() const {
+const std::vector<Trade> &Trader::getTradeHistory() const
+{
     return tradeHistory;
 }
 
-bool Trader::validateOrder(double price, int quantity) const {
-    if (price <= 0 || quantity <= 0) {
+bool Trader::validateOrder(double price, int quantity) const
+{
+    if (price <= 0 || quantity <= 0)
+    {
         return false;
     }
-    
-    if (price * quantity > capital) {
+
+    if (price * quantity > capital)
+    {
         return false;
     }
-    
+
     return true;
 }
-
-std::string Trader::generateOrderId() const {
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    static std::uniform_int_distribution<> dis(0, 15);
-    static const char* hex_chars = "0123456789ABCDEF";
-    
-    std::string orderId;
-    for (int i = 0; i < 8; ++i) {
-        orderId += hex_chars[dis(gen)];
-    }
-    return name + "_" + orderId;
-} 

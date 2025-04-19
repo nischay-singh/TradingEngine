@@ -3,33 +3,42 @@
 
 #include "OrderBook.hpp"
 #include "Trader.hpp"
+#include "OrderExecution.hpp"
 #include <string>
 #include <vector>
 #include <map>
 #include <memory>
+#include <chrono>
+#include <optional>
 
-class OrderManager {
+std::string generateOrderId();
+
+class OrderManager
+{
 public:
-    static OrderManager& getInstance();
-    
+    static OrderManager &getInstance();
+
     void registerTrader(std::shared_ptr<Trader> trader);
-    void unregisterTrader(const std::string& traderId);
-    
-    bool submitOrder(const std::string& traderId, const Order& order);
-    void cancelOrder(const std::string& traderId, const std::string& orderId);
-    
-    void updateMarketData(double price);
+    void unregisterTrader(const std::string &traderId);
+
+    std::optional<OrderExecution> submitOrder(const std::string &traderId, const Order &order);
+    void cancelOrder(const std::string &traderId, const std::string &orderId);
+
+    void updatePrice();
     std::map<std::string, double> getMarketData() const;
-    
+
+    OrderBook &getOrderBook() { return orderBook; }
+
+    std::vector<Trade> getTraderTradeHistory(const std::string &traderId) const;
+
 private:
     OrderManager();
     ~OrderManager() = default;
-    OrderManager(const OrderManager&) = delete;
-    OrderManager& operator=(const OrderManager&) = delete;
-    
+    OrderManager(const OrderManager &) = delete;
+    OrderManager &operator=(const OrderManager &) = delete;
+
     OrderBook orderBook;
     std::map<std::string, std::shared_ptr<Trader>> traders;
-    std::map<std::string, std::string> orderToTraderMap;
 };
 
-#endif 
+#endif

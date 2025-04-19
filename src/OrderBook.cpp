@@ -7,18 +7,6 @@
 
 static std::mt19937 rng(static_cast<unsigned>(std::chrono::steady_clock::now().time_since_epoch().count()));
 
-std::string generateOrderId() {
-    auto now = std::chrono::system_clock::now();
-    auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-    
-    std::uniform_int_distribution<int> dist(1000, 9999);
-    int random = dist(rng);
-    
-    std::stringstream ss;
-    ss << "ORD" << timestamp << random;
-    return ss.str();
-}
-
 OrderBook::OrderBook() : midPrice(100.0)
 {
     initialize(midPrice);
