@@ -102,7 +102,7 @@ void OrderBook::updatePriceArtificially()
 OrderExecution OrderBook::processOrder(const Order &order)
 {
     OrderExecution execution;
-    
+
     if (order.type == "buy_limit")
     {
         if (askBook.empty() || order.price < askBook.begin()->first)
@@ -110,7 +110,7 @@ OrderExecution OrderBook::processOrder(const Order &order)
             execution.status = "NOT_FILLED";
             return execution;
         }
-        
+
         int remaining = order.quantity;
         double totalCost = 0;
         int totalFilled = 0;
@@ -141,9 +141,9 @@ OrderExecution OrderBook::processOrder(const Order &order)
                 askBook.erase(levelPrice);
             }
         }
-        
+
         updateBestPrices();
-        
+
         if (totalFilled > 0)
         {
             execution.isExecuted = true;
@@ -165,7 +165,7 @@ OrderExecution OrderBook::processOrder(const Order &order)
             execution.status = "NOT_FILLED";
             return execution;
         }
-        
+
         int remaining = order.quantity;
         double totalProceeds = 0;
         int totalFilled = 0;
@@ -196,9 +196,9 @@ OrderExecution OrderBook::processOrder(const Order &order)
                 bidBook.erase(levelPrice);
             }
         }
-        
+
         updateBestPrices();
-        
+
         if (totalFilled > 0)
         {
             execution.isExecuted = true;
@@ -220,11 +220,11 @@ OrderExecution OrderBook::processOrder(const Order &order)
             execution.status = "NOT_FILLED";
             return execution;
         }
-        
+
         int remaining = order.quantity;
         double totalCost = 0;
         int totalFilled = 0;
-        
+
         while (remaining > 0 && !askBook.empty())
         {
             double levelPrice = askBook.begin()->first;
@@ -251,9 +251,9 @@ OrderExecution OrderBook::processOrder(const Order &order)
                 askBook.erase(levelPrice);
             }
         }
-        
+
         updateBestPrices();
-        
+
         if (totalFilled > 0)
         {
             execution.isExecuted = true;
@@ -275,11 +275,11 @@ OrderExecution OrderBook::processOrder(const Order &order)
             execution.status = "NOT_FILLED";
             return execution;
         }
-        
+
         int remaining = order.quantity;
         double totalProceeds = 0;
         int totalFilled = 0;
-        
+
         while (remaining > 0 && !bidBook.empty())
         {
             double levelPrice = bidBook.rbegin()->first;
@@ -306,9 +306,9 @@ OrderExecution OrderBook::processOrder(const Order &order)
                 bidBook.erase(levelPrice);
             }
         }
-        
+
         updateBestPrices();
-        
+
         if (totalFilled > 0)
         {
             execution.isExecuted = true;
@@ -323,7 +323,7 @@ OrderExecution OrderBook::processOrder(const Order &order)
             execution.status = "NOT_FILLED";
         }
     }
-    
+
     return execution;
 }
 

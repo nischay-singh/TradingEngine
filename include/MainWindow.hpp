@@ -4,9 +4,10 @@
 #include <QMainWindow>
 #include <QLabel>
 #include <QTimer>
+#include <QLineEdit>
 #include <QtCharts/QChartView>
+#include <QtCharts/QChart>
 #include <QtCharts/QLineSeries>
-#include <QtCharts/QValueAxis>
 #include "OrderManager.hpp"
 
 class MainWindow : public QMainWindow
@@ -18,20 +19,29 @@ public:
 
 private slots:
     void onUpdate();
+    void onBuyLimit();
+    void onBuyMarket();
+    void onSellLimit();
+    void onSellMarket();
 
 private:
     QLabel *bidLabel;
     QLabel *askLabel;
     QLabel *midLabel;
+    QLineEdit *priceInput;
+    QLineEdit *quantityInput;
     QTimer *timer;
-    OrderManager &mgr;
-
     QChartView *chartView;
     QChart *chart;
     QLineSeries *series;
-    QValueAxis *axisX;
-    QValueAxis *axisY;
+    QLabel *positionLabel;
+    QLabel *realizedPnlLabel;
+    QLabel *unrealizedPnlLabel;
+
+    OrderManager &mgr;
+
     int tickCount;
+    Trader trader;
 };
 
 #endif // MAINWINDOW_HPP
