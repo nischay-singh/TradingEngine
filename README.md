@@ -1,62 +1,61 @@
 # Trading Engine
 
-A high-performance C++ trading engine implementation that simulates a real-time order book and trading system.
+A real-time C++ trading engine with a Qt-based GUI, simulating a realistic market environment with order matching, market data streaming, PnL tracking, and live order book visualization.
 
 ## Features
 
-- Real-time order book management
-- Market order and limit order support
-- Order matching engine
-- Trader interface for order submission
-- Market data updates
-- Thread-safe implementation
-- Test suite for core functionality
+- Real-time Order Book (bid/ask aggregation)
+- Market and Limit order support
+- Price simulation and continuous market updates
+- Trader interface for order submission and performance tracking
+- Real-time PnL tracking (realized and unrealized)
+- Trade history table
+- Order book visualization (top 5 bid/ask levels)
+- Qt GUI with line chart display
+- Thread-safe core (OrderManager and OrderBook)
+- Modular and extensible C++ design
 
 ## Project Structure
 
 ```
 TradingEngine/
-├── include/           # Header files
+├── include/             # Header files
 │   ├── OrderBook.hpp
 │   ├── OrderManager.hpp
-│   └── Trader.hpp
-├── src/              # Source files
+│   ├── Trader.hpp
+│   └── OrderExecution.hpp
+├── src/                 # Source files
 │   ├── OrderBook.cpp
 │   ├── OrderManager.cpp
 │   ├── Trader.cpp
+│   ├── MainWindow.cpp
 │   └── main.cpp
-├── tests/            # Test files
-├── CMakeLists.txt    # Build configuration
-└── README.md         # This file
+├── tests/               # Unit tests
+├── CMakeLists.txt       # Build configuration
+└── README.md            # This file
 ```
 
 ## Dependencies
 
 - C++17 or later
+- Qt 6 (Charts module required)
 - CMake 3.10 or later
-- A C++ compiler with C++11 support
 
 ## Building the Project
 
-1. Clone the repository:
+Clone the repository and compile:
 
 ```bash
 git clone https://github.com/nischay-singh/TradingEngine.git
 cd TradingEngine
-```
-
-2. Create a build directory and compile:
-
-```bash
-mkdir build
-cd build
+mkdir build && cd build
 cmake ..
 make
 ```
 
 ## Running the Project
 
-After building, you can run the main trading engine:
+To launch the main GUI application:
 
 ```bash
 ./TradingEngine
@@ -67,6 +66,21 @@ To run the tests:
 ```bash
 ./TradingEngineTests
 ```
+
+## GUI Overview
+
+- Chart: Live price chart (line chart).
+- Labels: Display best bid, best ask, mid-price, current position, realized PnL, and unrealized PnL.
+- Controls: Submit Buy/Sell Market and Limit Orders with price and quantity input.
+- Order Book Table: Visualizes top 5 bid and ask levels.
+- Trade History Table: Shows all executed trades.
+
+## Thread Safety
+
+The following components are protected with std::mutex to ensure multi-threaded access is safe:
+
+- OrderManager
+- OrderBook
 
 ## Usage Example
 

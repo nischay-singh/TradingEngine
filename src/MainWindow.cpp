@@ -3,11 +3,14 @@
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QChart>
 #include <QtCharts/QValueAxis>
+#include <QtCharts/QCandlestickSeries>
+#include <QtCharts/QCandlestickSet>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QLineEdit>
 #include <QLabel>
+#include <iostream>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), mgr(OrderManager::getInstance()), tickCount(0), trader("GUI_USER", 100000.0)
@@ -87,6 +90,20 @@ MainWindow::MainWindow(QWidget *parent)
     chartView->setMinimumHeight(200);
     layout->addWidget(chartView);
 
+    orderBookTable = new QTableWidget(this);
+    orderBookTable->setColumnCount(4);
+    orderBookTable->setHorizontalHeaderLabels({"Bid Qty", "Bid Price", "Ask Price", "Ask Qty"});
+    orderBookTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    tradeHistoryTable = new QTableWidget(this);
+    tradeHistoryTable->setColumnCount(5);
+    tradeHistoryTable->setHorizontalHeaderLabels({"Side", "Type", "Qty", "Price", "Status"});
+
+    auto *tablesLayout = new QHBoxLayout();
+    tablesLayout->addWidget(orderBookTable);
+    tablesLayout->addWidget(tradeHistoryTable);
+    layout->addLayout(tablesLayout);
+
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &MainWindow::onUpdate);
     timer->start(500);
@@ -135,31 +152,111 @@ void MainWindow::onUpdate()
         axis->setRange(minY, maxY);
     }
 
+    updateOrderBookView();
+
     ++tickCount;
+}
+
+void MainWindow::updateOrderBookView()
+{
+    const auto &bidBook = mgr.getOrderBook().getBidLevels();
+    const auto &askBook = mgr.getOrderBook().getAskLevels();
+
+    int maxRows = std::max(bidBook.size(), askBook.size());
+    orderBookTable->setRowCount(maxRows);
+
+    for (int i = 0; i < maxRows; ++i)
+    {
+        if (i < bidBook.size())
+        {
+            const auto &bid = bidBook[i];
+            orderBookTable->setItem(i, 0, new QTableWidgetItem(QString::number(bid.second)));
+            orderBookTable->setItem(i, 1, new QTableWidgetItem(QString::number(bid.first, 'f', 2)));
+        }
+        else
+        {
+            orderBookTable->setItem(i, 0, new QTableWidgetItem(""));
+            orderBookTable->setItem(i, 1, new QTableWidgetItem(""));
+        }
+
+        if (i < askBook.size())
+        {
+            const auto &ask = askBook[i];
+            orderBookTable->setItem(i, 2, new QTableWidgetItem(QString::number(ask.first, 'f', 2)));
+            orderBookTable->setItem(i, 3, new QTableWidgetItem(QString::number(ask.second)));
+        }
+        else
+        {
+            orderBookTable->setItem(i, 2, new QTableWidgetItem(""));
+            orderBookTable->setItem(i, 3, new QTableWidgetItem(""));
+        }
+    }
+}
+
+void MainWindow::addTradeToHistory(const std::string &side, const std::string &type, const OrderExecution &execution)
+{
+    int row = tradeHistoryTable->rowCount();
+    tradeHistoryTable->insertRow(row);
+
+    QString sideStr = QString::fromStdString(side);
+    QString typeStr = QString::fromStdString(type);
+
+    tradeHistoryTable->setItem(row, 0, new QTableWidgetItem(sideStr));
+    tradeHistoryTable->setItem(row, 1, new QTableWidgetItem(typeStr));
+    tradeHistoryTable->setItem(row, 2, new QTableWidgetItem(QString::number(execution.filledQuantity)));
+    tradeHistoryTable->setItem(row, 3, new QTableWidgetItem(QString::number(execution.avgPrice, 'f', 2)));
+    tradeHistoryTable->setItem(row, 4, new QTableWidgetItem(QString::fromStdString(execution.status)));
 }
 
 void MainWindow::onBuyLimit()
 {
     double price = priceInput->text().toDouble();
     int qty = quantityInput->text().toInt();
-    trader.placeBuyLimitOrder(price, qty);
+    auto execution = trader.placeBuyLimitOrder(price, qty);
+
+    if (execution && execution->isExecuted)
+    {
+        addTradeToHistory("Buy", "Limit", *execution);
+        QMessageBox::information(this, "Trade Confirmation",
+                                 QString("Buy Limit Executed: %1 @ %2").arg(execution->filledQuantity).arg(execution->avgPrice));
+    }
 }
 
 void MainWindow::onBuyMarket()
 {
     int qty = quantityInput->text().toInt();
-    trader.placeBuyMarketOrder(qty);
+    auto execution = trader.placeBuyMarketOrder(qty);
+
+    if (execution && execution->isExecuted)
+    {
+        addTradeToHistory("Buy", "Market", *execution);
+        QMessageBox::information(this, "Trade Confirmation",
+                                 QString("Buy Market Executed: %1 @ %2").arg(execution->filledQuantity).arg(execution->avgPrice));
+    }
 }
 
 void MainWindow::onSellLimit()
 {
     double price = priceInput->text().toDouble();
     int qty = quantityInput->text().toInt();
-    trader.placeSellLimitOrder(price, qty);
+    auto execution = trader.placeSellLimitOrder(price, qty);
+
+    if (execution && execution->isExecuted)
+    {
+        addTradeToHistory("Sell", "Limit", *execution);
+        QMessageBox::information(this, "Trade Confirmation",
+                                 QString("Sell Limit Executed: %1 @ %2").arg(execution->filledQuantity).arg(execution->avgPrice));
+    }
 }
 
 void MainWindow::onSellMarket()
 {
     int qty = quantityInput->text().toInt();
-    trader.placeSellMarketOrder(qty);
+    auto execution = trader.placeSellMarketOrder(qty);
+    if (execution && execution->isExecuted)
+    {
+        addTradeToHistory("Sell", "Market", *execution);
+        QMessageBox::information(this, "Trade Confirmation",
+                                 QString("Sell Market Executed: %1 @ %2").arg(execution->filledQuantity).arg(execution->avgPrice));
+    }
 }

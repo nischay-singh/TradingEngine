@@ -8,6 +8,10 @@
 #include <QtCharts/QChartView>
 #include <QtCharts/QChart>
 #include <QtCharts/QLineSeries>
+#include <QtCharts/QCandlestickSeries>
+#include <QtCharts/QCandlestickSet>
+#include <QTableWidget>
+#include <QMessageBox>
 #include "OrderManager.hpp"
 
 class MainWindow : public QMainWindow
@@ -37,11 +41,16 @@ private:
     QLabel *positionLabel;
     QLabel *realizedPnlLabel;
     QLabel *unrealizedPnlLabel;
+    QTableWidget *tradeHistoryTable;
+    QTableWidget *orderBookTable;
 
     OrderManager &mgr;
 
     int tickCount;
     Trader trader;
+
+    void updateOrderBookView();
+    void addTradeToHistory(const std::string &side, const std::string &type, const OrderExecution &execution);
 };
 
 #endif // MAINWINDOW_HPP

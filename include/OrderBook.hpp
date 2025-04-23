@@ -3,6 +3,8 @@
 
 #include <map>
 #include <string>
+#include <vector>
+#include <mutex>
 #include "OrderExecution.hpp"
 
 struct Order
@@ -19,11 +21,13 @@ public:
     OrderBook();
 
     void updatePriceArtificially();
-
     OrderExecution processOrder(const Order &order);
 
     double getBestBid() const;
     double getBestAsk() const;
+
+    std::vector<std::pair<double, int>> getBidLevels() const;
+    std::vector<std::pair<double, int>> getAskLevels() const;
 
     std::map<std::string, double> getMarketData() const;
 
@@ -31,8 +35,9 @@ public:
     void refreshLiquidity(double midPrice);
 
 private:
-    double midPrice;
+    mutable std::mutex bookMutex;
 
+    double midPrice;
     std::map<double, std::vector<Order>> bidBook;
     std::map<double, std::vector<Order>> askBook;
     double bestBid;

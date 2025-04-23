@@ -2,7 +2,6 @@
 #include <chrono>
 #include <iostream>
 #include <sstream>
-#include <chrono>
 #include <random>
 
 static std::mt19937 rng(static_cast<unsigned>(std::chrono::steady_clock::now().time_since_epoch().count()));
@@ -20,16 +19,19 @@ OrderManager::OrderManager()
 
 void OrderManager::registerTrader(std::shared_ptr<Trader> trader)
 {
+    std::lock_guard<std::mutex> lock(mutex);
     traders[trader->getName()] = trader;
 }
 
 void OrderManager::unregisterTrader(const std::string &traderId)
 {
+    std::lock_guard<std::mutex> lock(mutex);
     traders.erase(traderId);
 }
 
 std::optional<OrderExecution> OrderManager::submitOrder(const std::string &traderId, const Order &order)
 {
+    std::lock_guard<std::mutex> lock(mutex);
     if (traders.find(traderId) == traders.end())
     {
         return std::nullopt;
@@ -45,25 +47,31 @@ std::optional<OrderExecution> OrderManager::submitOrder(const std::string &trade
     return std::nullopt;
 }
 
-void OrderManager::cancelOrder(const std::string &traderId, const std::string &orderId)
-{
-    // TODO
-
-    // if (orderToTraderMap[orderId] == traderId)
-    // {
-    //     orderBook.cancelOrder(orderId);
-    //     orderToTraderMap.erase(orderId);
-    // }
-}
-
 void OrderManager::updatePrice()
 {
+    std::lock_guard<std::mutex> lock(mutex);
     orderBook.updatePriceArtificially();
 }
 
 std::map<std::string, double> OrderManager::getMarketData() const
 {
+    std::lock_guard<std::mutex> lock(mutex);
     return orderBook.getMarketData();
+}
+
+OrderBook &OrderManager::getOrderBook()
+{
+    return orderBook; 
+}
+
+std::vector<Trade> OrderManager::getTraderTradeHistory(const std::string &traderId) const
+{
+    std::lock_guard<std::mutex> lock(mutex);
+    if (traders.find(traderId) != traders.end())
+    {
+        return traders.at(traderId)->getTradeHistory();
+    }
+    return {};
 }
 
 std::string generateOrderId()

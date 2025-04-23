@@ -10,6 +10,7 @@
 #include <memory>
 #include <chrono>
 #include <optional>
+#include <mutex>
 
 std::string generateOrderId();
 
@@ -22,12 +23,11 @@ public:
     void unregisterTrader(const std::string &traderId);
 
     std::optional<OrderExecution> submitOrder(const std::string &traderId, const Order &order);
-    void cancelOrder(const std::string &traderId, const std::string &orderId);
 
     void updatePrice();
     std::map<std::string, double> getMarketData() const;
 
-    OrderBook &getOrderBook() { return orderBook; }
+    OrderBook &getOrderBook();
 
     std::vector<Trade> getTraderTradeHistory(const std::string &traderId) const;
 
@@ -37,6 +37,7 @@ private:
     OrderManager(const OrderManager &) = delete;
     OrderManager &operator=(const OrderManager &) = delete;
 
+    mutable std::mutex mutex;
     OrderBook orderBook;
     std::map<std::string, std::shared_ptr<Trader>> traders;
 };

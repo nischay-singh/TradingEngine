@@ -14,6 +14,7 @@ OrderBook::OrderBook() : midPrice(100.0)
 
 void OrderBook::initialize(double midPrice)
 {
+    std::lock_guard<std::mutex> lock(bookMutex);
     this->midPrice = midPrice;
     bidBook.clear();
     askBook.clear();
@@ -41,6 +42,7 @@ void OrderBook::initialize(double midPrice)
 
 void OrderBook::refreshLiquidity(double midPrice)
 {
+    std::lock_guard<std::mutex> lock(bookMutex);
     bidBook.clear();
     askBook.clear();
 
@@ -74,6 +76,7 @@ void OrderBook::refreshLiquidity(double midPrice)
 
 void OrderBook::updatePriceArtificially()
 {
+    std::lock_guard<std::mutex> lock(bookMutex);
     std::uniform_real_distribution<double> movementDist(-1.0, 1.0);
     double movement = movementDist(rng);
     midPrice += movement;
@@ -101,6 +104,7 @@ void OrderBook::updatePriceArtificially()
 
 OrderExecution OrderBook::processOrder(const Order &order)
 {
+    std::lock_guard<std::mutex> lock(bookMutex);
     OrderExecution execution;
 
     if (order.type == "buy_limit")
@@ -329,16 +333,19 @@ OrderExecution OrderBook::processOrder(const Order &order)
 
 double OrderBook::getBestBid() const
 {
+    std::lock_guard<std::mutex> lock(bookMutex);
     return bestBid;
 }
 
 double OrderBook::getBestAsk() const
 {
+    std::lock_guard<std::mutex> lock(bookMutex);
     return bestAsk;
 }
 
 std::map<std::string, double> OrderBook::getMarketData() const
 {
+    std::lock_guard<std::mutex> lock(bookMutex);
     std::map<std::string, double> marketData;
     marketData["best_bid"] = bestBid;
     marketData["best_ask"] = bestAsk;
@@ -350,4 +357,32 @@ void OrderBook::updateBestPrices()
 {
     bestBid = bidBook.empty() ? 0.0 : bidBook.rbegin()->first;
     bestAsk = askBook.empty() ? 0.0 : askBook.begin()->first;
+}
+
+std::vector<std::pair<double, int>> OrderBook::getBidLevels() const
+{
+    std::lock_guard<std::mutex> lock(bookMutex);
+    std::vector<std::pair<double, int>> levels;
+    for (auto it = bidBook.rbegin(); it != bidBook.rend() && levels.size() < 5; ++it)
+    {
+        int totalQty = 0;
+        for (const auto &o : it->second)
+            totalQty += o.quantity;
+        levels.emplace_back(it->first, totalQty);
+    }
+    return levels;
+}
+
+std::vector<std::pair<double, int>> OrderBook::getAskLevels() const
+{
+    std::lock_guard<std::mutex> lock(bookMutex);
+    std::vector<std::pair<double, int>> levels;
+    for (auto it = askBook.begin(); it != askBook.end() && levels.size() < 5; ++it)
+    {
+        int totalQty = 0;
+        for (const auto &o : it->second)
+            totalQty += o.quantity;
+        levels.emplace_back(it->first, totalQty);
+    }
+    return levels;
 }

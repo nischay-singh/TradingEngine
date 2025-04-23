@@ -9,11 +9,11 @@
 Trader::Trader(const std::string &name, double initialCapital)
     : name(name), capital(initialCapital), currentPosition(0.0), realizedPnL(0.0) {}
 
-bool Trader::placeBuyLimitOrder(double price, int quantity)
+std::optional<OrderExecution> Trader::placeBuyLimitOrder(double price, int quantity)
 {
     if (!validateOrder(price, quantity))
     {
-        return false;
+        return std::nullopt;
     }
 
     Order order;
@@ -22,7 +22,7 @@ bool Trader::placeBuyLimitOrder(double price, int quantity)
     order.quantity = quantity;
     order.orderId = generateOrderId();
 
-    auto execution = OrderManager::getInstance().submitOrder(name, order);
+    std::optional<OrderExecution> execution = OrderManager::getInstance().submitOrder(name, order);
     if (execution && execution->isExecuted)
     {
         Trade trade;
@@ -32,16 +32,15 @@ bool Trader::placeBuyLimitOrder(double price, int quantity)
         tradeHistory.push_back(trade);
 
         updatePosition(trade);
-        return true;
     }
-    return false;
+    return execution;
 }
 
-bool Trader::placeSellLimitOrder(double price, int quantity)
+std::optional<OrderExecution> Trader::placeSellLimitOrder(double price, int quantity)
 {
     if (!validateOrder(price, quantity))
     {
-        return false;
+        return std::nullopt;
     }
 
     Order order;
@@ -50,7 +49,7 @@ bool Trader::placeSellLimitOrder(double price, int quantity)
     order.quantity = quantity;
     order.orderId = generateOrderId();
 
-    auto execution = OrderManager::getInstance().submitOrder(name, order);
+    std::optional<OrderExecution> execution = OrderManager::getInstance().submitOrder(name, order);
     if (execution && execution->isExecuted)
     {
         Trade trade;
@@ -60,12 +59,11 @@ bool Trader::placeSellLimitOrder(double price, int quantity)
         tradeHistory.push_back(trade);
 
         updatePosition(trade);
-        return true;
     }
-    return false;
+    return execution;
 }
 
-bool Trader::placeBuyMarketOrder(double quantity)
+std::optional<OrderExecution> Trader::placeBuyMarketOrder(double quantity)
 {
     Order order;
     order.orderId = generateOrderId();
@@ -73,7 +71,7 @@ bool Trader::placeBuyMarketOrder(double quantity)
     order.quantity = quantity;
     order.price = 0.0;
 
-    auto execution = OrderManager::getInstance().submitOrder(name, order);
+    std::optional<OrderExecution> execution = OrderManager::getInstance().submitOrder(name, order);
     if (execution && execution->isExecuted)
     {
         Trade trade;
@@ -83,12 +81,11 @@ bool Trader::placeBuyMarketOrder(double quantity)
         tradeHistory.push_back(trade);
 
         updatePosition(trade);
-        return true;
     }
-    return false;
+    return execution;
 }
 
-bool Trader::placeSellMarketOrder(double quantity)
+std::optional<OrderExecution> Trader::placeSellMarketOrder(double quantity)
 {
     Order order;
     order.orderId = generateOrderId();
@@ -96,7 +93,7 @@ bool Trader::placeSellMarketOrder(double quantity)
     order.quantity = quantity;
     order.price = 0.0;
 
-    auto execution = OrderManager::getInstance().submitOrder(name, order);
+    std::optional<OrderExecution> execution = OrderManager::getInstance().submitOrder(name, order);
     if (execution && execution->isExecuted)
     {
         Trade trade;
@@ -106,9 +103,8 @@ bool Trader::placeSellMarketOrder(double quantity)
         tradeHistory.push_back(trade);
 
         updatePosition(trade);
-        return true;
     }
-    return false;
+    return execution;
 }
 
 void Trader::updatePosition(const Trade &trade)
@@ -193,6 +189,11 @@ double Trader::getUnrealizedPnL(double currentPrice) const
         }
     }
     return pnl;
+}
+
+double Trader::getRealizedPnL() const
+{
+    return realizedPnL;
 }
 
 double Trader::getTotalPnL(double currentPrice) const

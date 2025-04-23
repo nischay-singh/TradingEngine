@@ -28,15 +28,15 @@ public:
 
     const std::string &getName() const { return name; }
 
-    bool placeBuyLimitOrder(double price, int quantity);
-    bool placeSellLimitOrder(double price, int quantity);
-    bool placeBuyMarketOrder(double quantity);
-    bool placeSellMarketOrder(double quantity);
+    std::optional<OrderExecution> placeBuyLimitOrder(double price, int quantity);
+    std::optional<OrderExecution> placeSellLimitOrder(double price, int quantity);
+    std::optional<OrderExecution> placeBuyMarketOrder(double quantity);
+    std::optional<OrderExecution> placeSellMarketOrder(double quantity);
 
     void updatePosition(const Trade &trade);
     double getCurrentPosition() const { return currentPosition; }
     double getUnrealizedPnL(double currentPrice) const;
-    double getRealizedPnL() const { return realizedPnL; }
+    double getRealizedPnL() const;
     double getTotalPnL(double currentPrice) const;
 
     double getAvailableCapital() const;
