@@ -61,7 +61,7 @@ std::map<std::string, double> OrderManager::getMarketData() const
 
 OrderBook &OrderManager::getOrderBook()
 {
-    return orderBook; 
+    return orderBook;
 }
 
 std::vector<Trade> OrderManager::getTraderTradeHistory(const std::string &traderId) const

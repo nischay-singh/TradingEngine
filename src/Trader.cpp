@@ -23,6 +23,7 @@ std::optional<OrderExecution> Trader::placeBuyLimitOrder(double price, int quant
     order.orderId = generateOrderId();
 
     std::optional<OrderExecution> execution = OrderManager::getInstance().submitOrder(name, order);
+
     if (execution && execution->isExecuted)
     {
         Trade trade;
