@@ -31,7 +31,6 @@ TradingEngine/
 │   ├── MainWindow.cpp
 │   └── main.cpp
 ├── tests/               # Unit tests
-├── OrderBook.cpp
 │   ├── test_orderbook.cpp
 │   ├── test_trader.cpp
 │   ├── test_ordermanager.cpp

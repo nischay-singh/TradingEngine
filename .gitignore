@@ -52,3 +52,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp 
+
+*.user
+*.user.*
+CMakeLists.txt.user
